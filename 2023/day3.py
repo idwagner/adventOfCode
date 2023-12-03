@@ -42,8 +42,12 @@ def is_symbol(char) -> bool:
     return True
 
 
+def hashpair(x, y):
+    return x * 1000000 + y
+
+
 def symbol_neighbors(lines, charset) -> bool:
-    neighbors = set()
+    neighbors = []
     y = charset[1]
     for i in range(0, len(str(charset[3]))):
         x = charset[0] + i
@@ -56,9 +60,9 @@ def symbol_neighbors(lines, charset) -> bool:
                 continue
 
             if is_symbol(lines[y_offset + y][x_offset + x]):
-                neighbors.add((y_offset + y, x_offset + x))
+                neighbors.append((y_offset + y, x_offset + x))
 
-    return neighbors
+    return set(neighbors)
 
 
 all_neighbors = []
@@ -75,17 +79,29 @@ for y, line in enumerate(data):
                     break
             length = x - st
             value = line[st : length + st]
-            series.append( [ st, y, length, int(value) ] )
+            series.append([st, y, length, int(value)])
             x -= 1
         x += 1
 
 
-with_neighbors = []
+by_symbol = {}
+
 for s in series:
     symbols = symbol_neighbors(data, s)
+    for x, y in symbols:
+        if y not in by_symbol:
+            by_symbol[y] = {}
 
-    if symbols:
-        with_neighbors.append(s[3])
+        if x not in by_symbol[y]:
+            by_symbol[y][x] = []
 
-print(with_neighbors)
-print(sum(with_neighbors))
+        by_symbol[y][x].append(s)
+
+powers = []
+
+for y, xitems in by_symbol.items():
+    for x, items in xitems.items():
+        if len(items) > 1:
+            powers.append(items[0][3] * items[1][3])
+
+print(sum(powers))
