@@ -14,7 +14,7 @@ re_numbers = re.compile(r"([0-9]+)")
 # https://adventofcode.com/2023/day/2
 
 
-neighbors = [
+neighbors_grid = [
     [-1, -1],
     [0, -1],
     [1, -1],
@@ -36,86 +36,56 @@ def getdata():
     return data
 
 
-def find_numbers(hline):
-    ret = []
-    matches = re_numbers.split(hline)
-    if not matches[0]:
-        matches.pop(0)
-
-    if matches[-1] == None:
-        matches.pop(-1)
-
-
 def is_symbol(char) -> bool:
     if char in "0123456789.":
         return False
     return True
 
 
-def has_symbol_neighbor(lines, hpos, vpos) -> bool:
-    for h_offset, v_offset in neighbors:
-        if not 0 <= hpos + h_offset < len(lines[vpos]):
-            continue
-
-        if not 0 <= vpos + v_offset < len(lines):
-            continue
-
-        try:
-            if is_symbol(lines[v_offset + vpos][h_offset + hpos]):
-                return True
-        except:
-            print()
-            print(f"{line}")
-
-            print(f"{v_offset=} {h_offset=} {hpos=} {vpos=}")
-            raise
-
-
-data = getdata()
-with_neighbors = []
-for vpos, line in enumerate(data):
-    found_symbol = False
-    symbol_neighbor = False
-
-    reset_number = False
-    series_len = 0
-
-    for hpos, char in enumerate(line):
-        if char in "1234567890":
-            if has_symbol_neighbor(data, hpos, vpos):
-                symbol_neighbor = True
-
-            series_len += 1
-
-        else:
-            if not series_len:
-                print(cgreen(char), end="")
+def symbol_neighbors(lines, charset) -> bool:
+    neighbors = set()
+    y = charset[1]
+    for i in range(0, len(str(charset[3]))):
+        x = charset[0] + i
+        for x_offset, y_offset in neighbors_grid:
+            coord = (x + x_offset, y + y_offset)
+            if not 0 <= x + x_offset < len(lines[y]):
                 continue
 
-            reset_number = True
+            if not 0 <= y + y_offset < len(lines):
+                continue
 
-        if reset_number and series_len:
-            reset_number = False
+            if is_symbol(lines[y_offset + y][x_offset + x]):
+                neighbors.add((y_offset + y, x_offset + x))
 
-            series_chars = "".join(
-                [line[hpos - series_len + x] for x in range(0, series_len)]
-            )
-
-            number_value = int(series_chars)
-            if symbol_neighbor:
-                with_neighbors.append(number_value)
-                print(cred(number_value), end="")
-            else:
-                print(cwhite(number_value), end="")
-
-            print(cgreen(char), end="")
-
-            series_len = 0
-            symbol_neighbor = False
-            series_chars = ""
-    print()
+    return neighbors
 
 
-print()
-# print(with_neighbors)
+all_neighbors = []
+data = getdata()
+series = []
+for y, line in enumerate(data):
+    x = 0
+    while x <= len(line) - 1:
+        if line[x] in "1234567890":
+            st = x
+            while True:
+                x += 1
+                if line[x] not in "1234567890":
+                    break
+            length = x - st
+            value = line[st : length + st]
+            series.append( [ st, y, length, int(value) ] )
+            x -= 1
+        x += 1
+
+
+with_neighbors = []
+for s in series:
+    symbols = symbol_neighbors(data, s)
+
+    if symbols:
+        with_neighbors.append(s[3])
+
+print(with_neighbors)
 print(sum(with_neighbors))
